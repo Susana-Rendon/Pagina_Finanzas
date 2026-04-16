@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mis Finanzas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div>
+            <h1>Mis Finanzas</h1>
+            <p>THE ETHEREAL LEDGER</p>
+          </div>
+        </div>
+        <nav class="menu">
+          <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+          <button class="nav-btn" data-section="transactions">Transactions</button>
+          <button class="nav-btn" data-section="goals">Savings Goals</button>
+          <button class="nav-btn" data-section="calendar">Financial Calendar</button>
+          <button class="nav-btn" data-section="reports">Reports</button>
+        </nav>
+        <button class="action-btn" id="open-transaction-modal">Add Transaction</button>
+        <div class="sidebar-footer">
+          <button class="text-btn">Help</button>
+          <button class="text-btn">Sign Out</button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div class="topbar-left"></div>
+          <div class="topbar-right">
+            <button class="icon-btn">🔔</button>
+            <button class="icon-btn">⚙️</button>
+            <div class="avatar">C</div>
+          </div>
+        </header>
+
+        <section id="dashboard" class="page active-page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Mis Finanzas</p>
+              <h2>Bonjour, Camille.</h2>
+              <p class="subtitle">Your financial garden is blooming beautifully this month. Let's review your progress.</p>
+            </div>
+            <div class="total-card">
+              <div class="total-label">Total Balance</div>
+              <div class="total-value" id="dashboard-balance">$0</div>
+              <button class="ghost-btn">👁</button>
+            </div>
+          </div>
+
+          <div class="overview-grid">
+            <article class="small-card">
+              <span>Monthly Income</span>
+              <strong id="dashboard-income">$0</strong>
+            </article>
+            <article class="small-card soft-pink">
+              <span>Monthly Expenses</span>
+              <strong id="dashboard-expenses">$0</strong>
+            </article>
+            <article class="small-card soft-purple">
+              <span>Savings Goal</span>
+              <strong id="dashboard-savings">45% Complete</strong>
+            </article>
+          </div>
+
+          <div class="chart-grid">
+            <section class="panel card">
+              <div class="panel-title">Financial Trends</div>
+              <canvas id="trendChart"></canvas>
+            </section>
+            <section class="panel card">
+              <div class="panel-title">Expense Distribution</div>
+              <canvas id="pieChart"></canvas>
+            </section>
+          </div>
+
+          <div class="insight-grid">
+            <div class="insight-card soft-purple-card">
+              <strong>Optimizing Subscriptions</strong>
+              <p>We've identified $42/month in unused streaming services. Canceling these could add $504 to your 'Villa in Provence' goal this year.</p>
+            </div>
+            <div class="insight-card soft-pink-card">
+              <strong>Budget Alert: Entertainment</strong>
+              <p>You've reached 85% of your entertainment budget for June. There are 10 days left — consider a cozy night in.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="transactions" class="page">
+          <div class="page-header compact">
+            <div>
+              <p class="eyebrow">Transactions</p>
+              <h2>Track your cashflow.</h2>
+            </div>
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">ALL</button>
+              <button class="filter-btn" data-filter="income">INCOME</button>
+              <button class="filter-btn" data-filter="expense">EXPENSES</button>
+              <button class="filter-btn" data-filter="saving">SAVINGS</button>
+            </div>
+          </div>
+
+          <div class="transactions-panel">
+            <div class="report-card">
+              <span>Total Outflow This Month</span>
+              <strong id="transactions-summary">$0</strong>
+              <p>12% lower than previous month</p>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="goals" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Savings Goals</p>
+              <h2>Nurturing your future.</h2>
+              <p class="subtitle">Your wealth is a garden. Continue tending to your goals with patience and intention.</p>
+            </div>
+            <button class="action-btn small" id="open-goal-modal">Create New Goal</button>
+          </div>
+
+          <div class="goal-grid" id="goals-list"></div>
+        </section>
+
+        <section id="calendar" class="page">
+          <div class="page-header compact">
+            <div>
+              <p class="eyebrow">Financial Calendar</p>
+              <h2>Cultivate your monthly ritual.</h2>
+            </div>
+            <div class="view-toggle">
+              <button class="toggle-btn active">Month</button>
+              <button class="toggle-btn">Week</button>
+            </div>
+          </div>
+
+          <div class="calendar-grid">
+            <div class="calendar-card card">
+              <div class="calendar-month">
+                <button id="prevMonth">‹</button>
+                <span id="calendar-month-label"></span>
+                <button id="nextMonth">›</button>
+              </div>
+              <div class="calendar-days" id="calendar-grid"></div>
+            </div>
+            <aside class="detail-card card">
+              <div class="detail-header">
+                <div>
+                  <p class="eyebrow">Monday</p>
+                  <strong id="calendar-selected-date">Nov 4, 2024</strong>
+                </div>
+                <span class="badge">Selected</span>
+              </div>
+              <div id="calendar-details" class="day-transactions"></div>
+              <div class="quick-actions">
+                <button class="ghost-btn">Add Bill</button>
+                <button class="ghost-btn">Add Income</button>
+              </div>
+              <div class="upcoming-card">
+                <p class="eyebrow">Upcoming Rituals</p>
+                <div class="upcoming-item"><strong>Salary Deposit</strong><span>Projected +$4,200.00</span></div>
+                <div class="upcoming-item"><strong>Cloud Subscriptions</strong><span>Autopay -$12.99</span></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="reports" class="page">
+          <div class="page-header compact">
+            <div>
+              <p class="eyebrow">Reports</p>
+              <h2>Monthly financial health.</h2>
+            </div>
+            <button class="action-btn small" id="export-btn">Export to Excel</button>
+          </div>
+
+          <div class="report-grid">
+            <div class="report-card card">
+              <span>Total Expenses</span>
+              <strong id="report-expenses">$0</strong>
+            </div>
+            <div class="report-card card soft-purple">
+              <span>Income vs Last Month</span>
+              <strong id="report-comparison">+12%</strong>
+            </div>
+            <div class="report-card card soft-pink">
+              <span>Net Flow</span>
+              <strong id="report-netflow">$0</strong>
+            </div>
+          </div>
+
+          <div class="report-details">
+            <div class="insight-card soft-purple-card">
+              <strong>Spending optimization</strong>
+              <p>Based on your current savings rate, your 'Emergency Fund' will be fully nurtured by December. Keep the momentum.</p>
+            </div>
+            <div class="insight-card soft-pink-card">
+              <strong>Auto-Nurture Active</strong>
+              <p>We've identified $120 in spare change this week that can be redirected to your 'New Car' goal.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="transaction-modal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="transaction-modal-title">Add Transaction</h3>
+          <button class="close-btn" id="close-transaction-modal">×</button>
+        </div>
+        <form id="transaction-form">
+          <label>Descripción<input type="text" name="description" required /></label>
+          <label>Categoría<input type="text" name="category" required /></label>
+          <label>Monto<input type="number" name="amount" step="0.01" required /></label>
+          <label>Tipo<select name="type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+            <option value="saving">Saving</option>
+          </select></label>
+          <label>Fecha<input type="date" name="date" required /></label>
+          <label>Nota<textarea name="note"></textarea></label>
+          <div class="modal-actions">
+            <button type="button" class="ghost-btn" id="cancel-transaction">Cancel</button>
+            <button type="submit" class="action-btn">Save Transaction</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal" id="goal-modal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Create New Goal</h3>
+          <button class="close-btn" id="close-goal-modal">×</button>
+        </div>
+        <form id="goal-form">
+          <label>Nombre<input type="text" name="name" required /></label>
+          <label>Objetivo<input type="number" name="target" step="0.01" required /></label>
+          <label>Ahorrado<input type="number" name="saved" step="0.01" required /></label>
+          <label>Descripción<textarea name="description"></textarea></label>
+          <label>Prioridad<select name="priority">
+            <option>Low</option>
+            <option selected>Medium</option>
+            <option>High</option>
+          </select></label>
+          <label>Color<input type="color" name="color" value="#b78abf" /></label>
+          <div class="modal-actions">
+            <button type="button" class="ghost-btn" id="cancel-goal">Cancel</button>
+            <button type="submit" class="action-btn">Save Goal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
