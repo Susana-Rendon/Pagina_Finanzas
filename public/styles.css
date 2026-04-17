@@ -104,6 +104,10 @@ button {
   border-radius: 18px;
   padding: 14px 22px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .action-btn {
@@ -230,6 +234,20 @@ button {
 .total-value {
   font-size: 2rem;
   font-weight: 700;
+}
+
+.total-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.goal-summary {
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  max-width: 320px;
 }
 
 .overview-grid,
@@ -439,6 +457,25 @@ td button {
   margin-top: 18px;
 }
 
+.reminder-item,
+.tx-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(166, 130, 145, 0.12);
+}
+
+.reminder-item strong,
+.tx-item strong {
+  display: block;
+}
+
+.reminder-item span,
+.tx-item span {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: 1.4fr 0.9fr;
@@ -513,6 +550,49 @@ td button {
   justify-content: space-between;
   align-items: flex-start;
   gap: 18px;
+}
+
+body.auth-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, rgba(248, 225, 235, 0.95), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(208, 183, 222, 0.92), transparent 28%),
+    linear-gradient(180deg, #fff7fb 0%, #f8eef3 100%);
+}
+
+.content.auth-shell {
+  max-width: 740px;
+  margin: 64px auto;
+  padding: 40px 36px 48px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(165, 129, 146, 0.16);
+  box-shadow: 0 38px 90px rgba(95, 61, 85, 0.12);
+  border-radius: 42px;
+}
+
+.content.auth-shell .page-header {
+  margin-bottom: 28px;
+}
+
+.content.auth-shell .page-header .brand p {
+  color: #8f6f88;
+}
+
+.content.auth-shell label {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.content.auth-shell input {
+  width: 100%;
+  border: 1px solid rgba(154, 126, 140, 0.22);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.9);
+  padding: 14px 16px;
+}
+
+.content.auth-shell .modal-actions {
+  justify-content: center;
 }
 
 .badge {

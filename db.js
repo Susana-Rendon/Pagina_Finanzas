@@ -9,60 +9,91 @@ const db = new sqlite3.Database(dbFile, (err) => {
 });
 
 const initSql = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS transactions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   description TEXT NOT NULL,
   category TEXT NOT NULL,
   amount REAL NOT NULL,
   type TEXT NOT NULL,
   date TEXT NOT NULL,
-  note TEXT
+  note TEXT,
+  FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
-CREATE TABLE IF NOT EXISTS goals (
+CREATE TABLE IF NOT EXISTS savings_goals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   name TEXT NOT NULL,
-  target REAL NOT NULL,
-  saved REAL NOT NULL,
+  target_amount REAL NOT NULL,
+  current_amount REAL NOT NULL,
   description TEXT,
   priority TEXT,
-  color TEXT
+  color TEXT,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS fixed_expenses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  amount REAL NOT NULL,
+  due_day INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  amount REAL NOT NULL,
+  billing_day INTEGER NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
 );
 `;
 
-function runInit() {
-  db.exec(initSql, (err) => {
+function ensureColumnExists(table, column, definition, callback) {
+  db.all(`PRAGMA table_info(${table})`, (err, rows) => {
     if (err) {
-      console.error('Error inicializando tablas:', err.message);
-      return;
+      return callback(err);
     }
+    const exists = rows.some((row) => row.name === column);
+    if (exists) {
+      return callback(null);
+    }
+    db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`, callback);
+  });
+}
 
-    db.get('SELECT COUNT(*) AS count FROM transactions', (err, row) => {
-      if (!err && row.count === 0) {
-        const insertTx = db.prepare('INSERT INTO transactions (description, category, amount, type, date, note) VALUES (?, ?, ?, ?, ?, ?)');
-        const seedTx = [
-          ['Artisan Bakery & Cafe', 'Habits', -12.5, 'expense', '2024-11-04', 'Desayuno'],
-          ['Monthly Retainer - Design', 'Income', 2450, 'income', '2024-11-03', 'Cliente recurrente'],
-          ['City Penthouse Rent', 'Fixed Expenses', -1800, 'expense', '2024-11-01', 'Alquiler mensual'],
-          ['Emergency Fund Deposit', 'Savings', -500, 'saving', '2024-11-05', 'Ahorro mensual']
-        ];
-        seedTx.forEach((item) => insertTx.run(item));
-        insertTx.finalize();
+function runInit() {
+  db.serialize(() => {
+    db.exec(initSql, (err) => {
+      if (err) {
+        console.error('Error inicializando tablas:', err.message);
       }
     });
 
-    db.get('SELECT COUNT(*) AS count FROM goals', (err, row) => {
-      if (!err && row.count === 0) {
-        const insertGoal = db.prepare('INSERT INTO goals (name, target, saved, description, priority, color) VALUES (?, ?, ?, ?, ?, ?)');
-        const seedGoals = [
-          ['New Car', 35000, 22750, 'The Obsidian Sport Sedan', 'High', '#8c5a6e'],
-          ['Vacation', 5000, 1600, 'Amalfi Coast Retreat', 'Medium', '#7f6db8'],
-          ['Emergency Fund', 20000, 17600, '6 Months Stability', 'Priority', '#9b7d5c'],
-          ['Modern Sanctuary', 100000, 12000, 'Future Home Deposit', 'Low', '#7a6877']
-        ];
-        seedGoals.forEach((item) => insertGoal.run(item));
-        insertGoal.finalize();
-      }
+    const migrations = [
+      { table: 'transactions', column: 'user_id', definition: 'INTEGER DEFAULT 0' },
+      { table: 'savings_goals', column: 'user_id', definition: 'INTEGER DEFAULT 0' },
+      { table: 'fixed_expenses', column: 'user_id', definition: 'INTEGER DEFAULT 0' },
+      { table: 'subscriptions', column: 'user_id', definition: 'INTEGER DEFAULT 0' }
+    ];
+
+    migrations.forEach((migration) => {
+      ensureColumnExists(migration.table, migration.column, migration.definition, (err) => {
+        if (err) {
+          console.error(`Error agregando columna ${migration.column} a la tabla ${migration.table}:`, err.message);
+        }
+      });
     });
   });
 }

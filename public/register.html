@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="register_title">Registrar cuenta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-page">
+    <div class="content auth-shell">
+      <div class="page-header">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div>
+            <h1 data-i18n="appTitle">Mis Finanzas</h1>
+            <p data-i18n="appTagline">EL LIBRO ETÉREO</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="panel card" style="max-width:520px; margin:auto;">
+        <div class="modal-header">
+          <h3 id="form-title" data-i18n="register_title">Registrar cuenta</h3>
+        </div>
+        <form id="auth-form">
+          <label><span data-i18n="label_name">Nombre</span><input type="text" name="name" required /></label>
+          <label><span data-i18n="label_email">Correo</span><input type="email" name="email" required /></label>
+          <label><span data-i18n="label_password">Contraseña</span><input type="password" name="password" required /></label>
+          <div class="modal-actions">
+            <button type="submit" class="action-btn" data-i18n="register_button">Registrarse</button>
+          </div>
+        </form>
+        <div class="modal-actions" style="justify-content:center; margin-top:16px; gap:12px;">
+          <span data-i18n="already_have_account">¿Ya tienes cuenta?</span>
+          <a href="login.html" class="ghost-btn small" data-i18n="back_to_login">Volver al login</a>
+        </div>
+      </section>
+      <div class="toast" id="auth-toast"></div>
+    </div>
+    <script src="auth.js"></script>
+  </body>
+</html>
