@@ -203,6 +203,58 @@ app.get('/api/session', (req, res) => {
   });
 });
 
+app.put('/api/profile', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'El nombre es requerido.' });
+    }
+    
+    await runExec(
+      'UPDATE users SET name = ? WHERE id = ?',
+      [name.trim(), userId]
+    );
+    
+    req.session.userName = name.trim();
+    res.json({ success: true, message: 'Perfil actualizado.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/change-password', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { current_password, new_password } = req.body;
+    
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Contraseña actual y nueva son requeridas.' });
+    }
+    
+    const user = await runGet('SELECT password FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+    
+    const passwordMatch = await bcrypt.compare(current_password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await runExec(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [hashedPassword, userId]
+    );
+    
+    res.json({ success: true, message: 'Contraseña actualizada.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 function requireAuth(req, res, next) {
   if (req.session.userId) {
     return next();

@@ -56,6 +56,24 @@ const dashboardGoalMessage = document.getElementById('dashboard-goal-message');
 const remindersList = document.getElementById('reminders-list');
 const fixedExpensesList = document.getElementById('fixed-expenses-list');
 const subscriptionsList = document.getElementById('subscriptions-list');
+const notificationsBtn = document.getElementById('notifications-btn');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const notificationsBadge = document.getElementById('notification-badge');
+const notificationsContent = document.getElementById('notifications-content');
+const closeNotificationsBtn = document.getElementById('close-notifications');
+const settingsBtn = document.querySelector('[aria-label="settings"]');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettingsBtn = document.getElementById('close-settings-modal');
+const changePasswordModal = document.getElementById('change-password-modal');
+const closeChangePasswordBtn = document.getElementById('close-change-password-modal');
+const changePasswordForm = document.getElementById('change-password-form');
+const settingsNameInput = document.getElementById('settings-name');
+const settingsEmailInput = document.getElementById('settings-email');
+const updateProfileBtn = document.getElementById('update-profile-btn');
+const changePasswordBtn = document.getElementById('change-password-btn');
+const exportDataBtn = document.getElementById('export-data-btn');
+const notificationsEnabledCheckbox = document.getElementById('notifications-enabled');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
 
 const translations = {
   es: {
@@ -187,7 +205,33 @@ const translations = {
     export_started: 'Exportación iniciada.',
     export_error: 'Error al exportar archivo.',
     logout_success: 'Cerrando sesión...',
-    user_greeting: 'Hola, {name}'
+    user_greeting: 'Hola, {name}',
+    notifications: 'Notificaciones',
+    no_notifications: 'No hay notificaciones',
+    settings_title: 'Configuración',
+    profile_settings: 'Perfil',
+    your_name: 'Tu nombre',
+    email_address: 'Correo electrónico',
+    save_changes: 'Guardar cambios',
+    preferences: 'Preferencias',
+    enable_notifications: 'Activar notificaciones',
+    dark_mode: 'Modo oscuro',
+    security: 'Seguridad',
+    change_password: 'Cambiar contraseña',
+    data_exportation: 'Exportación de datos',
+    export_description: 'Descarga todos tus datos en formato Excel',
+    about: 'Información',
+    app_description: 'Tu gestor personal de finanzas con inteligencia integrada',
+    change_password_title: 'Cambiar contraseña',
+    current_password: 'Contraseña actual',
+    new_password: 'Nueva contraseña',
+    confirm_password: 'Confirmar contraseña',
+    save_password: 'Guardar contraseña',
+    profile_updated: 'Perfil actualizado con éxito.',
+    password_changed: 'Contraseña cambiada con éxito.',
+    password_mismatch: 'Las contraseñas no coinciden.',
+    password_error: 'Error al cambiar la contraseña.',
+    invalid_current_password: 'La contraseña actual es incorrecta.'
   },
   en: {
     appTitle: 'My Finances',
@@ -318,7 +362,33 @@ const translations = {
     export_started: 'Export started.',
     export_error: 'Error exporting file.',
     logout_success: 'Signing out...',
-    user_greeting: 'Hello, {name}'
+    user_greeting: 'Hello, {name}',
+    notifications: 'Notifications',
+    no_notifications: 'No notifications',
+    settings_title: 'Settings',
+    profile_settings: 'Profile',
+    your_name: 'Your name',
+    email_address: 'Email address',
+    save_changes: 'Save changes',
+    preferences: 'Preferences',
+    enable_notifications: 'Enable notifications',
+    dark_mode: 'Dark mode',
+    security: 'Security',
+    change_password: 'Change password',
+    data_exportation: 'Data Export',
+    export_description: 'Download all your data in Excel format',
+    about: 'About',
+    app_description: 'Your personal financial manager with integrated intelligence',
+    change_password_title: 'Change Password',
+    current_password: 'Current password',
+    new_password: 'New password',
+    confirm_password: 'Confirm password',
+    save_password: 'Save password',
+    profile_updated: 'Profile updated successfully.',
+    password_changed: 'Password changed successfully.',
+    password_mismatch: 'Passwords do not match.',
+    password_error: 'Error changing password.',
+    invalid_current_password: 'Current password is incorrect.'
   }
 };
 
@@ -450,6 +520,41 @@ if (languageSelect) {
   languageSelect.addEventListener('change', () => setLanguage(languageSelect.value));
 }
 
+// Event listeners para configuración
+if (settingsBtn) {
+  settingsBtn.addEventListener('click', () => openModal(settingsModal));
+}
+
+if (closeSettingsBtn) {
+  closeSettingsBtn.addEventListener('click', () => closeModal(settingsModal));
+}
+
+if (closeChangePasswordBtn) {
+  closeChangePasswordBtn.addEventListener('click', () => closeModal(changePasswordModal));
+}
+
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener('click', () => {
+    closeModal(settingsModal);
+    openModal(changePasswordModal);
+  });
+}
+
+if (updateProfileBtn) {
+  updateProfileBtn.addEventListener('click', updateProfile);
+}
+
+if (exportDataBtn) {
+  exportDataBtn.addEventListener('click', () => {
+    closeModal(settingsModal);
+    exportToExcel();
+  });
+}
+
+if (changePasswordForm) {
+  changePasswordForm.addEventListener('submit', changePassword);
+}
+
 function openModal(modal) {
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
@@ -476,6 +581,12 @@ function closeModal(modal) {
   if (modal === goalModal) {
     goalForm.reset();
     editGoalId = null;
+  }
+  if (modal === settingsModal) {
+    // No limpiar nada específico para settings
+  }
+  if (modal === changePasswordModal) {
+    changePasswordForm.reset();
   }
 }
 
@@ -636,25 +747,7 @@ goalForm.addEventListener('submit', async (event) => {
 });
 
 exportBtn.addEventListener('click', async () => {
-  try {
-    const response = await fetch(`${API_BASE}/api/export`, { credentials: 'include' });
-    if (!response.ok) {
-      showToast(t('export_error'));
-      return;
-    }
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'mis-finanzas.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    showToast(t('export_started'));
-  } catch (err) {
-    showToast(t('export_error'));
-  }
+  await exportToExcel();
 });
 
 prevMonthBtn.addEventListener('click', () => changeMonth(-1));
@@ -675,6 +768,28 @@ function formatDateLabel(dateString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+async function exportToExcel() {
+  try {
+    const response = await fetch(`${API_BASE}/api/export`, { credentials: 'include' });
+    if (!response.ok) {
+      showToast(t('export_error'));
+      return;
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mis-finanzas.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showToast(t('export_started'));
+  } catch (err) {
+    showToast(t('export_error'));
+  }
+}
+
 async function loadAll() {
   await Promise.all([loadSummary(), loadTransactions(), loadGoals(), loadCalendar(), loadReports(), loadFixedExpenses(), loadSubscriptions()]);
 }
@@ -691,6 +806,8 @@ async function loadSummary() {
   dashboardAvailable.textContent = formatCurrency(totals.available);
   dashboardGoalMessage.textContent = goals.length ? buildGoalMessage(goals[0]) : t('no_savings_goal');
   renderReminders(reminders || []);
+  updateNotificationBadge(reminders || []);
+  renderNotifications(reminders || []);
   updateCharts(categories, data.transactions);
 }
 
@@ -1049,6 +1166,217 @@ async function loadSession() {
   }
 }
 
+function updateNotificationBadge(notifications) {
+  if (!notificationsBadge) return;
+  const count = notifications.length;
+  if (count > 0) {
+    notificationsBadge.textContent = count;
+    notificationsBadge.style.display = 'flex';
+  } else {
+    notificationsBadge.style.display = 'none';
+  }
+}
+
+function renderNotifications(notifications) {
+  if (!notificationsContent) return;
+  
+  if (!notifications || notifications.length === 0) {
+    notificationsContent.innerHTML = `<p class="notification-empty">${t('no_notifications')}</p>`;
+    return;
+  }
+
+  notificationsContent.innerHTML = notifications.map(notification => {
+    const isUrgent = notification.type === 'fixed' || notification.type === 'subscription';
+    const urgentClass = isUrgent ? 'urgent' : '';
+    return `
+      <div class="notification-item ${urgentClass}">
+        <strong>${notification.text}</strong>
+        <span>${formatDateLabel(notification.date)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleNotificationsDropdown() {
+  if (!notificationsDropdown) return;
+  notificationsDropdown.classList.toggle('active');
+}
+
+function closeNotificationsDropdown() {
+  if (!notificationsDropdown) return;
+  notificationsDropdown.classList.remove('active');
+}
+
+// Event listeners para notificaciones
+if (notificationsBtn) {
+  notificationsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleNotificationsDropdown();
+  });
+}
+
+if (closeNotificationsBtn) {
+  closeNotificationsBtn.addEventListener('click', closeNotificationsDropdown);
+}
+
+// Cerrar dropdown cuando se hace clic fuera
+document.addEventListener('click', (e) => {
+  if (notificationsDropdown && notificationsBtn && 
+      !notificationsDropdown.contains(e.target) && 
+      !notificationsBtn.contains(e.target)) {
+    closeNotificationsDropdown();
+  }
+});
+
+// Event listeners para configuración
+if (settingsBtn) {
+  settingsBtn.addEventListener('click', () => openModal(settingsModal));
+}
+
+if (closeSettingsBtn) {
+  closeSettingsBtn.addEventListener('click', () => closeModal(settingsModal));
+}
+
+if (closeChangePasswordBtn) {
+  closeChangePasswordBtn.addEventListener('click', () => closeModal(changePasswordModal));
+}
+
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener('click', () => {
+    closeModal(settingsModal);
+    openModal(changePasswordModal);
+  });
+}
+
+if (updateProfileBtn) {
+  updateProfileBtn.addEventListener('click', updateProfile);
+}
+
+if (exportDataBtn) {
+  exportDataBtn.addEventListener('click', () => {
+    closeModal(settingsModal);
+    exportToExcel();
+  });
+}
+
+if (changePasswordForm) {
+  changePasswordForm.addEventListener('submit', changePassword);
+}
+
+// Cargar datos del usuario en configuración
+function loadSettingsData() {
+  if (currentUser && settingsNameInput) {
+    settingsNameInput.value = currentUser.name || '';
+    if (settingsEmailInput) {
+      settingsEmailInput.value = currentUser.email || '';
+    }
+  }
+  
+  // Cargar preferencias
+  const notificationsEnabled = localStorage.getItem('notificationsEnabled');
+  if (notificationsEnabledCheckbox) {
+    notificationsEnabledCheckbox.checked = notificationsEnabled !== 'false';
+  }
+  
+  const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+  if (darkModeToggle) {
+    darkModeToggle.checked = darkModeEnabled;
+  }
+  
+  // Aplicar modo oscuro si está guardado
+  applyDarkMode(darkModeEnabled);
+}
+
+function applyDarkMode(enabled) {
+  if (enabled) {
+    document.documentElement.classList.add('dark-mode');
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+  }
+}
+
+async function updateProfile() {
+  const newName = settingsNameInput?.value?.trim();
+  
+  if (!newName) {
+    showToast(t('fill_required'));
+    return;
+  }
+  
+  try {
+    const response = await apiFetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    
+    currentUser.name = newName;
+    if (userGreeting) {
+      userGreeting.textContent = t('user_greeting', { name: currentUser.name });
+    }
+    if (avatar) {
+      avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+    }
+    
+    showToast(t('profile_updated'));
+    closeModal(settingsModal);
+    applyTranslations();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+async function changePassword(event) {
+  event.preventDefault();
+  const formData = new FormData(changePasswordForm);
+  const currentPassword = formData.get('current_password');
+  const newPassword = formData.get('new_password');
+  const confirmPassword = formData.get('confirm_password');
+  
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showToast(t('fill_required'));
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast(t('password_mismatch'));
+    return;
+  }
+  
+  try {
+    const response = await apiFetch('/api/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword
+      })
+    });
+    
+    changePasswordForm.reset();
+    closeModal(changePasswordModal);
+    openModal(settingsModal);
+    showToast(t('password_changed'));
+  } catch (err) {
+    showToast(err.message || t('password_error'));
+  }
+}
+
+// Event listeners para modo oscuro y notificaciones
+if (notificationsEnabledCheckbox) {
+  notificationsEnabledCheckbox.addEventListener('change', () => {
+    localStorage.setItem('notificationsEnabled', notificationsEnabledCheckbox.checked);
+  });
+}
+
+if (darkModeToggle) {
+  darkModeToggle.addEventListener('change', () => {
+    const enabled = darkModeToggle.checked;
+    localStorage.setItem('darkMode', enabled);
+    applyDarkMode(enabled);
+  });
+}
+
 async function initialize() {
   setLanguage(currentLang);
   const authenticated = await loadSession();
@@ -1057,6 +1385,7 @@ async function initialize() {
   if (currentUser) {
     userGreeting.textContent = t('user_greeting', { name: currentUser.name });
     avatar.textContent = currentUser.name.charAt(0).toUpperCase();
+    loadSettingsData();
   }
   await loadAll();
 }
