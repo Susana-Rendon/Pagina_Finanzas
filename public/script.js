@@ -35,6 +35,10 @@ const languageSelect = document.getElementById('language-select');
 const logoutBtn = document.getElementById('logout-btn');
 const userGreeting = document.getElementById('user-greeting');
 const avatar = document.getElementById('avatar');
+const toggleBalanceBtn = document.getElementById('toggle-balance-btn');
+const transactionTypeSelect = document.getElementById('transaction-type-select');
+const savingsGoalField = document.getElementById('savings-goal-field');
+const savingsGoalSelect = document.getElementById('savings-goal-select');
 
 const dashboardBalance = document.getElementById('dashboard-balance');
 const dashboardIncome = document.getElementById('dashboard-income');
@@ -478,6 +482,34 @@ function switchSection(sectionId) {
   navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.section === sectionId));
 }
 
+// ========== FUNCIONALIDAD MOSTRAR/OCULTAR SALDO ==========
+let balanceVisible = localStorage.getItem('balanceVisible') !== 'false';
+let actualBalance = '$0'; // Guardar el saldo real
+
+function updateBalanceVisibility() {
+  if (balanceVisible) {
+    dashboardBalance.textContent = actualBalance;
+    toggleBalanceBtn.textContent = '👁';
+    toggleBalanceBtn.title = 'Ocultar saldo';
+  } else {
+    const maskedLength = actualBalance.replace(/[^0-9]/g, '').length;
+    dashboardBalance.textContent = '•'.repeat(Math.max(4, maskedLength));
+    toggleBalanceBtn.textContent = '👁‍🗨';
+    toggleBalanceBtn.title = 'Mostrar saldo';
+  }
+}
+
+function toggleBalanceVisibility() {
+  balanceVisible = !balanceVisible;
+  localStorage.setItem('balanceVisible', balanceVisible);
+  updateBalanceVisibility();
+}
+
+if (toggleBalanceBtn) {
+  toggleBalanceBtn.addEventListener('click', toggleBalanceVisibility);
+  updateBalanceVisibility();
+}
+
 navButtons.forEach(button => {
   button.addEventListener('click', () => switchSection(button.dataset.section));
 });
@@ -555,6 +587,37 @@ if (changePasswordForm) {
   changePasswordForm.addEventListener('submit', changePassword);
 }
 
+// ========== FUNCIONALIDAD DE METAS EN TRANSACCIONES ==========
+async function loadSavingsGoalsForTransaction() {
+  try {
+    const goals = await apiFetch('/api/goals');
+    savingsGoalSelect.innerHTML = '<option value="">Seleccionar meta...</option>';
+    goals.forEach(goal => {
+      const option = document.createElement('option');
+      option.value = goal.id;
+      option.textContent = `${goal.name} (${formatCurrency(goal.saved)} / ${formatCurrency(goal.target)})`;
+      savingsGoalSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.error('Error cargando metas:', err);
+  }
+}
+
+function handleTransactionTypeChange() {
+  const selectedType = transactionTypeSelect.value;
+  if (selectedType === 'saving') {
+    savingsGoalField.style.display = 'block';
+    loadSavingsGoalsForTransaction();
+  } else {
+    savingsGoalField.style.display = 'none';
+    savingsGoalSelect.value = '';
+  }
+}
+
+if (transactionTypeSelect) {
+  transactionTypeSelect.addEventListener('change', handleTransactionTypeChange);
+}
+
 function openModal(modal) {
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
@@ -566,6 +629,9 @@ function closeModal(modal) {
   if (modal === transactionModal) {
     transactionForm.reset();
     editTransactionId = null;
+    savingsGoalField.style.display = 'none';
+    savingsGoalSelect.value = '';
+    transactionTypeSelect.value = 'expense';
     document.getElementById('transaction-modal-title').textContent = t('transaction_modal_title_add');
   }
   if (modal === fixedExpenseModal) {
@@ -630,6 +696,17 @@ transactionForm.addEventListener('submit', async (event) => {
     date: formData.get('date'),
     note: formData.get('note').trim()
   };
+  
+  // Agregar savings_goal_id si es tipo saving
+  if (data.type === 'saving') {
+    const goalId = formData.get('savings_goal_id');
+    if (!goalId) {
+      showToast('Por favor selecciona una meta de ahorro.');
+      return;
+    }
+    data.savings_goal_id = goalId;
+  }
+  
   if (!data.description || !data.category || !data.amount || !data.date) {
     showToast(t('fill_required'));
     return;
@@ -797,7 +874,8 @@ async function loadAll() {
 async function loadSummary() {
   const data = await apiFetch('/api/summary');
   const { totals, categories, goals, reminders } = data;
-  dashboardBalance.textContent = formatCurrency(totals.income - totals.expenses - totals.savings - totals.fixedExpenses - totals.subscriptions);
+  actualBalance = formatCurrency(totals.income - totals.expenses - totals.savings - totals.fixedExpenses - totals.subscriptions);
+  updateBalanceVisibility();
   dashboardIncome.textContent = formatCurrency(totals.income);
   dashboardExpenses.textContent = formatCurrency(totals.expenses);
   dashboardSavings.textContent = `${goals.length ? Math.round((goals[0].saved / goals[0].target) * 100) : 0}% ${t('complete')}`;
@@ -970,6 +1048,15 @@ async function editTransaction(id) {
   transactionForm.type.value = tx.type;
   transactionForm.date.value = tx.date;
   transactionForm.note.value = tx.note;
+  
+  // Manejar campo de meta si es tipo saving
+  if (tx.type === 'saving') {
+    savingsGoalField.style.display = 'block';
+    loadSavingsGoalsForTransaction();
+  } else {
+    savingsGoalField.style.display = 'none';
+  }
+  
   document.getElementById('transaction-modal-title').textContent = t('transaction_modal_title_edit');
   openModal(transactionModal);
 }

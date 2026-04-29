@@ -342,7 +342,7 @@ app.get('/api/transactions', async (req, res) => {
 app.post('/api/transactions', async (req, res) => {
   try {
     const userId = req.session.userId;
-    const { description, category, amount, type, date, note } = req.body;
+    const { description, category, amount, type, date, note, savings_goal_id } = req.body;
     if (!description || !category || !amount || !type || !date) {
       return res.status(400).json({ error: 'Todos los campos obligatorios deben llenarse.' });
     }
@@ -356,6 +356,18 @@ app.post('/api/transactions', async (req, res) => {
       date,
       note || ''
     ]);
+    
+    // Si es tipo saving, actualizar la meta de ahorro
+    if (type === 'saving' && savings_goal_id) {
+      const goalId = Number(savings_goal_id);
+      const goal = await runGet('SELECT current_amount, target_amount FROM savings_goals WHERE id = ? AND user_id = ?', [goalId, userId]);
+      
+      if (goal) {
+        const newAmount = Math.min(goal.current_amount + Math.abs(amount), goal.target_amount);
+        await runExec('UPDATE savings_goals SET current_amount = ? WHERE id = ? AND user_id = ?', [newAmount, goalId, userId]);
+      }
+    }
+    
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -366,10 +378,14 @@ app.put('/api/transactions/:id', async (req, res) => {
   try {
     const userId = req.session.userId;
     const { id } = req.params;
-    const { description, category, amount, type, date, note } = req.body;
+    const { description, category, amount, type, date, note, savings_goal_id } = req.body;
     if (!description || !category || !amount || !type || !date) {
       return res.status(400).json({ error: 'Todos los campos obligatorios deben llenarse.' });
     }
+    
+    // Obtener la transacción anterior para calcular la diferencia
+    const oldTransaction = await runGet('SELECT amount, type FROM transactions WHERE id = ? AND user_id = ?', [id, userId]);
+    
     const finalAmount = type === 'income' ? Math.abs(amount) : -Math.abs(amount);
     await runExec('UPDATE transactions SET description = ?, category = ?, amount = ?, type = ?, date = ?, note = ? WHERE id = ? AND user_id = ?', [
       description,
@@ -381,6 +397,28 @@ app.put('/api/transactions/:id', async (req, res) => {
       id,
       userId
     ]);
+    
+    // Si la transacción anterior era de tipo saving, revertir la actualización de la meta
+    if (oldTransaction && oldTransaction.type === 'saving') {
+      const goals = await runQuery('SELECT id, current_amount FROM savings_goals WHERE user_id = ?', [userId]);
+      if (goals.length > 0) {
+        const goal = goals[0];
+        const newAmount = Math.max(0, goal.current_amount + Math.abs(oldTransaction.amount));
+        await runExec('UPDATE savings_goals SET current_amount = ? WHERE id = ?', [newAmount, goal.id]);
+      }
+    }
+    
+    // Si la nueva transacción es de tipo saving, actualizar la meta
+    if (type === 'saving' && savings_goal_id) {
+      const goalId = Number(savings_goal_id);
+      const goal = await runGet('SELECT current_amount, target_amount FROM savings_goals WHERE id = ? AND user_id = ?', [goalId, userId]);
+      
+      if (goal) {
+        const newAmount = Math.min(goal.current_amount + Math.abs(amount), goal.target_amount);
+        await runExec('UPDATE savings_goals SET current_amount = ? WHERE id = ? AND user_id = ?', [newAmount, goalId, userId]);
+      }
+    }
+    
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -390,7 +428,22 @@ app.put('/api/transactions/:id', async (req, res) => {
 app.delete('/api/transactions/:id', async (req, res) => {
   try {
     const userId = req.session.userId;
-    await runExec('DELETE FROM transactions WHERE id = ? AND user_id = ?', [req.params.id, userId]);
+    const transactionId = req.params.id;
+    
+    // Obtener la transacción para verificar si es tipo saving
+    const transaction = await runGet('SELECT amount, type FROM transactions WHERE id = ? AND user_id = ?', [transactionId, userId]);
+    
+    if (transaction && transaction.type === 'saving') {
+      // Si es tipo saving, buscar la meta y restar el monto
+      const goals = await runQuery('SELECT id, current_amount FROM savings_goals WHERE user_id = ?', [userId]);
+      if (goals.length > 0) {
+        const goal = goals[0];
+        const newAmount = Math.max(0, goal.current_amount + Math.abs(transaction.amount));
+        await runExec('UPDATE savings_goals SET current_amount = ? WHERE id = ?', [newAmount, goal.id]);
+      }
+    }
+    
+    await runExec('DELETE FROM transactions WHERE id = ? AND user_id = ?', [transactionId, userId]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

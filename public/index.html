@@ -77,7 +77,7 @@
               <div class="total-label" data-i18n="total_balance">Saldo total</div>
               <div class="total-value" id="dashboard-balance">$0</div>
               <div class="total-actions">
-                <button class="ghost-btn">👁</button>
+                <button class="ghost-btn" id="toggle-balance-btn" title="Mostrar/Ocultar saldo">👁</button>
                 <button class="ghost-btn" id="add-salary-btn" data-i18n="add_salary">Agregar salario</button>
                 <button class="ghost-btn" id="add-goal-btn" data-i18n="add_savings_goal">Agregar ahorro</button>
               </div>
@@ -297,11 +297,16 @@
           <label><span data-i18n="label_description">Descripción</span><input type="text" name="description" required /></label>
           <label><span data-i18n="label_category">Categoría</span><input type="text" name="category" required /></label>
           <label><span data-i18n="label_amount">Monto</span><input type="number" name="amount" step="0.01" required /></label>
-          <label><span data-i18n="label_type">Tipo</span><select name="type">
+          <label><span data-i18n="label_type">Tipo</span><select name="type" id="transaction-type-select">
             <option value="expense" data-i18n="option_expense">Gasto</option>
             <option value="income" data-i18n="option_income">Ingreso</option>
             <option value="saving" data-i18n="option_saving">Ahorro</option>
           </select></label>
+          <div id="savings-goal-field" style="display: none;">
+            <label><span data-i18n="label_goal_name" style="display: block; margin-bottom: 8px;">Meta de ahorro</span><select name="savings_goal_id" id="savings-goal-select">
+              <option value="">Seleccionar meta...</option>
+            </select></label>
+          </div>
           <label><span data-i18n="label_date">Fecha</span><input type="date" name="date" required /></label>
           <label><span data-i18n="label_note">Nota</span><textarea name="note"></textarea></label>
           <div class="modal-actions">
